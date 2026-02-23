@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal CECC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { ceccBlue: { DEFAULT: '#00548F', dark: '#003f6b' }, ceccYellow: '#FDB913' } } } }
+    </script>
+</head>
+<body>
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative border-t-4 border-ceccYellow pb-10">
+        <div class="header-bg p-4 text-center shadow-sm border-b-2 border-ceccBlue/20 relative">
+            <img src="logo-cecc.png" onclick="irParaHome()" alt="Logo CECC" class="h-24 mx-auto mb-2 object-contain cursor-pointer hover:opacity-80 transition" title="Voltar para o Início" onerror="this.style.display='none'">
+            <p id="infoUsuario" class="text-sm text-ceccBlue font-bold hidden bg-blue-50 inline-block px-3 py-1 rounded-full"></p>
+        </div>
+
+        <div id="telaLogin" class="p-6 mt-4 tela-app">
+            <h2 class="text-2xl font-bold text-center text-ceccBlue mb-6">Acesso ao Sistema</h2>
+            <div class="space-y-4">
+                <input type="text" id="inputLogin" onkeypress="if(event.key === 'Enter') fazerLogin()" placeholder="Usuário" class="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-ceccBlue focus:outline-none">
+                <input type="password" id="inputSenha" onkeypress="if(event.key === 'Enter') fazerLogin()" placeholder="Senha" class="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-ceccBlue focus:outline-none">
+                <div class="text-right"><button onclick="abrirModal('modalEsqueciSenha')" class="text-sm text-ceccBlue hover:underline font-bold">Esqueceu a senha?</button></div>
+                <button onclick="fazerLogin()" id="btnLogin" class="w-full bg-ceccBlue text-white font-bold py-4 rounded-lg shadow-md mt-2 transition w-full">Entrar <i class="fas fa-sign-in-alt ml-2"></i></button>
+                <p id="msgLogin" class="text-center text-red-500 font-bold hidden mt-2"></p>
+            </div>
+        </div>
+
+        <div id="telaDashboard" class="p-6 hidden tela-app">
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-ceccBlue border-l-4 border-ceccYellow pl-3">Minhas Turmas</h2><button onclick="mostrarTela('telaPerfil', abrirPerfil)" class="text-sm bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-600"><i class="fas fa-user-circle"></i> Perfil</button></div>
+            <div id="listaBotoesTurma" class="space-y-3 mb-6"></div>
+            <hr class="mb-5 border-gray-200">
+            <button onclick="mostrarTela('telaAcolhimento', carregarTermometroAcolhimento)" class="w-full bg-ceccYellow text-white font-bold py-3 rounded-lg mb-4 shadow hover:bg-yellow-500 transition"><i class="fas fa-heartbeat mr-2"></i> Termômetro de Acolhimento</button>
+            <button onclick="mostrarTela('telaAniversariantes', carregarAniversariantes)" class="w-full bg-pink-500 text-white font-bold py-3 rounded-lg mb-6 shadow"><i class="fas fa-birthday-cake mr-2"></i> Aniversariantes do Mês</button>
+
+            <h2 class="text-lg font-bold text-gray-600 mb-3 pl-1">Ações Rápidas</h2>
+            <button onclick="abrirFormAdulto()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg mb-3 shadow"><i class="fas fa-user-plus mr-2"></i> Cadastrar Adultos</button>
+            <button onclick="abrirFormDIJ()" class="w-full bg-purple-500 text-white font-bold py-3 rounded-lg mb-3 shadow"><i class="fas fa-child mr-2"></i> Cadastrar Criança/Jovem</button>
+            <button onclick="mostrarTela('telaDiretorio', carregarDiretorio)" class="w-full bg-blue-100 text-blue-800 font-bold py-3 rounded-lg mb-3 shadow"><i class="fas fa-search mr-2"></i> Consultar Cadastro</button>
+            
+            <div id="painelAdmin" class="hidden">
+                <h2 class="text-lg font-bold text-gray-600 mb-3 pl-1 mt-6 border-t pt-4"><i class="fas fa-shield-alt mr-2 text-ceccBlue"></i>Administração</h2>
+                <button onclick="mostrarTela('telaGestaoCoords', carregarGestaoCoordenadores)" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg mb-3 shadow"><i class="fas fa-users-cog mr-2"></i> Gestão de Coordenadores</button>
+                <button onclick="mostrarTela('telaGerenciarTurmas', carregarListaTurmasGestao)" class="w-full bg-teal-600 text-white font-bold py-3 rounded-lg mb-3 shadow"><i class="fas fa-chalkboard mr-2"></i> Gerenciar Turmas</button>
+            </div>
+            <button onclick="sair()" class="w-full mt-4 bg-gray-100 text-gray-600 font-bold py-3 rounded-lg"><i class="fas fa-sign-out-alt mr-2"></i> Sair</button>
+        </div>
+
+        <div id="telaAcolhimento" class="p-6 hidden tela-app">
+            <button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button>
+            <h2 class="text-2xl font-bold text-ceccYellow mb-2 border-l-4 border-ceccBlue pl-3"><i class="fas fa-heartbeat mr-2"></i> Acolhimento</h2>
+            <p class="text-sm text-gray-600 mb-6 bg-yellow-50 p-3 rounded-lg border border-yellow-200">Acompanhamento dos alunos que acumularam <b>2 faltas consecutivas</b> nas últimas aulas da sua turma.</p>
+            
+            <div id="loadingAcolhimento" class="text-center text-gray-500 py-10"><i class="fas fa-spinner fa-spin text-3xl mb-2 text-ceccYellow"></i><br>Buscando histórico...</div>
+            
+            <h3 id="tituloAlertas" class="font-bold text-red-600 mb-2 border-b border-red-200 pb-1 hidden"><i class="fas fa-exclamation-circle mr-1"></i> Contato Pendente</h3>
+            <ul id="listaAlertasAcolhimento" class="space-y-4 mb-8"></ul>
+
+            <h3 id="tituloJustificados" class="font-bold text-green-700 mb-2 border-b border-green-200 pb-1 hidden"><i class="fas fa-check-circle mr-1"></i> Aguardando Retorno (Justificados)</h3>
+            <ul id="listaJustificadosAcolhimento" class="space-y-4 pb-10"></ul>
+        </div>
+
+        <div id="telaDiretorio" class="p-6 hidden tela-app">
+            <button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button>
+            <h2 class="text-2xl font-bold text-ceccBlue mb-4 border-l-4 border-ceccYellow pl-3">Consulta de Cadastros</h2>
+            <div class="space-y-2 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <input type="text" id="inputFiltroDiretorio" onkeyup="filtrarDiretorio()" placeholder="Pesquisar por nome..." class="w-full border-2 border-gray-300 p-2 rounded-lg focus:outline-none focus:border-ceccBlue text-sm">
+                <select id="filtroTurmaDiretorio" onchange="filtrarDiretorio()" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:outline-none focus:border-ceccBlue text-sm bg-white"><option value="todas">Todas as Turmas</option></select>
+            </div>
+            <div class="flex border-b mb-4">
+                <button id="btnAbaAdulto" onclick="mudarAbaDiretorio('adulto')" class="w-1/2 py-2 font-bold text-emerald-700 border-b-4 border-emerald-500 bg-emerald-50">Adultos</button>
+                <button id="btnAbaDIJ" onclick="mudarAbaDiretorio('dij')" class="w-1/2 py-2 font-bold text-gray-500">DIJ</button>
+            </div>
+            <div id="loadingDiretorio" class="text-center text-gray-500 py-10"><i class="fas fa-spinner fa-spin text-3xl"></i></div>
+            <div id="abaDiretorioAdulto" class="space-y-3 pb-10"><ul id="listaDirAdultos" class="space-y-2"></ul></div>
+            <div id="abaDiretorioDIJ" class="space-y-3 hidden pb-10"><ul id="listaDirDIJ" class="space-y-2"></ul></div>
+        </div>
+
+        <div id="telaAniversariantes" class="p-6 hidden tela-app">
+            <button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button>
+            <h2 class="text-2xl font-bold text-pink-600 mb-4 border-l-4 border-pink-400 pl-3"><i class="fas fa-birthday-cake mr-2"></i>Aniversariantes</h2>
+            <select id="filtroMesAniver" onchange="renderizarAniversariantes()" class="w-full border-2 p-2 rounded-lg mb-2 bg-white"><option value="todos">Todos os Meses</option><option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
+            <select id="filtroTurmaAniver" onchange="renderizarAniversariantes()" class="w-full border-2 p-2 rounded-lg mb-4 bg-white"><option value="todas">Todas as Turmas</option></select>
+            <div id="listaAniversariantes" class="space-y-6 pb-10"></div>
+        </div>
+
+        <div id="telaGestaoCoords" class="p-6 hidden tela-app">
+            <button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button>
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-l-4 border-indigo-400 pl-3">Coordenadores</h2>
+            <button onclick="abrirFormCoordenador()" class="w-full bg-indigo-100 text-indigo-800 font-bold py-2 rounded mb-4"><i class="fas fa-plus"></i> Novo Coordenador</button>
+            <ul id="listaDeCoordenadores" class="space-y-2 pb-10"></ul>
+        </div>
+
+        <div id="telaGerenciarTurmas" class="p-6 hidden tela-app">
+            <button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button>
+            <h2 class="text-2xl font-bold text-teal-700 mb-4 border-l-4 border-teal-400 pl-3">Gestão de Turmas</h2>
+            <div class="bg-teal-50 p-4 rounded-lg mb-6 border border-teal-200">
+                <h3 id="tituloFormTurma" class="font-bold text-teal-800 mb-2">Criar Turma</h3>
+                <input type="hidden" id="gtId"><input type="text" id="gtNome" placeholder="Nome *" class="w-full border p-2 rounded mb-2">
+                <div class="flex space-x-2 mb-2"><input type="number" id="gtAno" placeholder="Ano *" class="w-1/3 border p-2 rounded"><input type="number" id="gtOrdem" placeholder="Ordem (ex: 0)" class="w-1/3 border p-2 rounded"><select id="gtStatus" class="w-1/3 border p-2 rounded bg-white"><option value="Ativa">Ativa</option><option value="Encerrada">Encerrada</option></select></div>
+                <div class="flex space-x-2"><button onclick="limparFormTurma()" class="w-1/3 bg-gray-300 font-bold py-2 rounded">Limpar</button><button id="btnSalvarTurma" onclick="salvarTurma()" class="w-2/3 bg-teal-600 text-white font-bold py-2 rounded">Salvar</button></div><p id="msgTurma" class="text-center font-bold mt-2 hidden text-sm"></p>
+            </div>
+            <ul id="listaDeTurmasGestao" class="space-y-2 pb-10"></ul>
+        </div>
+
+        <div id="telaCadastroAdulto" class="p-6 hidden tela-app">
+            <button onclick="mostrarTela('telaDiretorio', carregarDiretorio)" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Voltar para Consulta</button>
+            <h2 id="tituloFormAdulto" class="text-2xl font-bold text-emerald-700 mb-4 border-l-4 border-emerald-400 pl-3">Novo Adulto</h2>
+            <div class="space-y-4 bg-white p-5 rounded-lg shadow-md border border-gray-200">
+                <input type="hidden" id="cadA_Id">
+                <div><label class="font-bold text-emerald-700 text-sm">Nome Completo *</label><input type="text" id="cadA_Nome" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-emerald-500 focus:outline-none"></div>
+                <div class="flex space-x-3"><div class="w-1/2"><label class="font-bold text-emerald-700 text-sm">Nascimento</label><input type="date" id="cadA_Nasc" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-emerald-500 text-sm"></div><div class="w-1/2"><label class="font-bold text-emerald-700 text-sm">Telefone/Whats</label><input type="tel" id="cadA_Telefone" oninput="mascaraTelefone(event)" placeholder="(41) 99999-9999" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-emerald-500 text-sm"></div></div>
+                <div><label class="font-bold text-emerald-700 text-sm">E-mail</label><input type="email" id="cadA_Email" placeholder="exemplo@email.com" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-emerald-500 focus:outline-none"></div>
+                <div><label class="font-bold text-emerald-700 text-sm">Vincular às Turmas:</label><p class="text-[11px] text-gray-500 mb-1">Se não marcar, salva como "Somente Cadastro".</p><div id="containerTurmasAdulto" class="w-full border-2 border-gray-300 p-2 rounded mt-1 max-h-40 overflow-y-auto bg-gray-50 custom-scrollbar focus-within:border-emerald-500"></div></div>
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 mt-2"><h3 class="font-bold text-purple-800 text-sm mb-2"><i class="fas fa-child mr-2"></i>Filhos/Jovens (DIJ) Vinculados</h3><div class="flex space-x-2 mb-2"><input type="text" id="inputBuscaFilho" placeholder="Buscar criança/jovem..." class="w-full border-2 border-purple-200 p-2 rounded text-sm focus:outline-none focus:border-purple-500 bg-white"><button onclick="buscarFilhoParaVinculo()" class="bg-purple-600 text-white px-4 rounded font-bold hover:bg-purple-700 transition shadow-sm"><i class="fas fa-search"></i></button></div><ul id="listaBuscaFilho" class="space-y-1"></ul><ul id="listaFilhosSelecionados" class="space-y-1 mt-3"></ul></div>
+                <button id="btnSalvarAdulto" onclick="salvarAdulto()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-lg mt-4 text-lg shadow-md transition">Salvar Adulto</button>
+                <button id="btnExcluirAdulto" onclick="excluirRegistro('CADASTRO', document.getElementById('cadA_Id').value)" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-3 rounded-lg mt-2 hidden transition"><i class="fas fa-trash-alt mr-2"></i> Excluir Registro</button>
+                <p id="msgCadastroAdulto" class="text-center font-bold mt-2 hidden p-2 rounded"></p>
+            </div>
+        </div>
+
+        <div id="telaCadastroDIJ" class="p-6 hidden tela-app">
+            <button onclick="mostrarTela('telaDiretorio', carregarDiretorio)" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Voltar para Consulta</button>
+            <h2 id="tituloFormDIJ" class="text-2xl font-bold text-purple-700 mb-4 border-l-4 border-purple-400 pl-3">Novo DIJ</h2>
+            <div class="space-y-4 bg-white p-5 rounded-lg shadow-md border border-purple-200">
+                <input type="hidden" id="cadD_Id">
+                <div><label class="font-bold text-purple-700 text-sm">Nome da Criança/Jovem *</label><input type="text" id="cadD_Nome" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-purple-500 focus:outline-none"></div>
+                <div class="mb-2"><label class="font-bold text-purple-700 text-sm">Data de Nascimento *</label><div class="flex items-center space-x-2 mt-1"><input type="date" id="cadD_Nasc" onchange="verificarIdadeDIJ()" class="w-full border-2 border-gray-300 p-2 rounded focus:border-purple-500 text-sm"><span id="badgeIdade" class="hidden px-2 py-1 text-xs font-bold rounded shadow-sm whitespace-nowrap"></span></div></div>
+                <div><label class="font-bold text-purple-700 text-sm">Turmas:</label><p class="text-[11px] text-gray-500 mb-1">Se não marcar, salva como "Somente Cadastro".</p><div id="containerTurmasDIJ" class="w-full border-2 border-gray-300 p-2 rounded mt-1 max-h-32 overflow-y-auto bg-gray-50 custom-scrollbar focus-within:border-purple-500"></div></div>
+                <div><label class="font-bold text-red-600 text-sm">Observações de Saúde</label><textarea id="cadD_Obs" class="w-full border-2 border-red-200 bg-red-50 p-2 rounded mt-1 text-sm focus:border-red-400 focus:outline-none" rows="2"></textarea></div>
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-2"><h3 class="font-bold text-blue-800 text-sm"><i class="fas fa-users mr-2"></i>Pais/Responsáveis</h3><p id="avisoResponsavelDIJ" class="text-[11px] font-bold text-red-600 mb-2 mt-1">Preencha a data de nascimento primeiro.</p><div class="flex space-x-2 mb-2"><input type="text" id="inputBuscaResp" placeholder="Buscar pai/mãe..." class="w-full border-2 border-blue-200 p-2 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"><button onclick="buscarPaiParaVinculo()" class="bg-blue-600 text-white px-4 rounded font-bold hover:bg-blue-700 transition shadow-sm"><i class="fas fa-search"></i></button></div><ul id="listaBuscaResp" class="space-y-1"></ul><ul id="listaResponsaveisSelecionados" class="space-y-1 mt-3"></ul></div>
+                <button id="btnSalvarDIJ" onclick="salvarDIJ()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg mt-4 text-lg shadow-md transition">Salvar DIJ</button>
+                <button id="btnExcluirDIJ" onclick="excluirRegistro('CADASTRO_DIJ', document.getElementById('cadD_Id').value)" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-3 rounded-lg mt-2 hidden transition"><i class="fas fa-trash-alt mr-2"></i> Excluir Registro</button>
+                <p id="msgCadastroDIJ" class="text-center font-bold mt-2 hidden p-2 rounded"></p>
+            </div>
+        </div>
+
+        <div id="telaCadastroCoordenador" class="p-6 hidden tela-app">
+            <button onclick="mostrarTela('telaGestaoCoords', carregarGestaoCoordenadores)" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
+            <h2 id="tituloFormCoord" class="text-2xl font-bold text-indigo-700 mb-4 border-l-4 border-indigo-400 pl-3">Novo Coordenador</h2>
+            <div class="space-y-3 bg-white p-5 rounded-lg shadow-md border border-indigo-200">
+                <input type="hidden" id="cadCoord_Acao" value="criar"><input type="hidden" id="cadCoord_LoginOrig">
+                <div><label class="font-bold text-indigo-700 text-sm">Nome Completo *</label><input type="text" id="cadCoordNome" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-indigo-500 focus:outline-none"></div>
+                <div><label class="font-bold text-indigo-700 text-sm">Usuário de Login *</label><input type="text" id="cadCoordLogin" placeholder="Ex: maria.esde" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-indigo-500 focus:outline-none"></div>
+                <div><label class="font-bold text-indigo-700 text-sm">E-mail *</label><input type="email" id="cadCoordEmail" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-indigo-500 focus:outline-none"></div>
+                <div><label class="font-bold text-indigo-700 text-sm">Perfil *</label><select id="cadCoordPerfil" class="w-full border-2 border-gray-300 p-2 rounded mt-1 bg-white focus:border-indigo-500"><option value="Coordenador">Coordenador</option><option value="Admin">Administrador</option></select></div>
+                <div><label class="font-bold text-indigo-700 text-sm">Turmas (Acesso): *</label><div id="containerTurmasCoord" class="w-full border-2 border-gray-300 p-2 rounded mt-1 max-h-40 overflow-y-auto bg-gray-50 custom-scrollbar focus-within:border-indigo-500"></div></div>
+                <button id="btnSalvarCoordenador" onclick="salvarCoordenador()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-lg mt-4 text-lg shadow-md transition">Salvar Coordenador</button>
+                <button id="btnExcluirCoordenador" onclick="excluirRegistro('USUARIOS', document.getElementById('cadCoord_LoginOrig').value)" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-3 rounded-lg mt-2 hidden transition"><i class="fas fa-trash-alt mr-2"></i> Excluir Coordenador</button>
+                <p id="msgCadastroCoordenador" class="text-center font-bold mt-2 hidden p-2 rounded text-sm"></p>
+            </div>
+        </div>
+
+        <div id="telaChamada" class="p-4 hidden pb-24 tela-app"><button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button><div class="flex justify-between items-center mb-4 border-b-2 border-ceccYellow pb-3"><h2 id="tituloTurmaChamada" class="text-2xl font-bold text-ceccBlue">Turma</h2><input type="date" id="dataChamada" onchange="carregarChamadaData()" class="border-2 border-ceccBlue p-2 rounded-lg text-sm text-ceccBlue font-bold focus:outline-none bg-blue-50"></div><div id="loadingChamada" class="text-center text-gray-500 py-10 hidden"><i class="fas fa-spinner fa-spin text-4xl mb-2 text-ceccBlue"></i><p class="text-sm">Buscando lista...</p></div><ul id="listaAlunosChamada" class="space-y-3 mb-6"></ul><button onclick="abrirModal('modalVisitante')" class="w-full border-2 border-dashed border-ceccBlue/50 text-ceccBlue font-bold py-3 rounded-lg mb-6 bg-white hover:bg-blue-50 transition"><i class="fas fa-search mr-2"></i> Adicionar Visitante</button><div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t max-w-md mx-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"><button id="btnSalvarChamada" onclick="salvarChamada()" class="w-full bg-ceccBlue text-white font-bold py-4 rounded-lg shadow-md transition text-lg">Gravar Chamada <i class="fas fa-save ml-2"></i></button></div></div>
+
+        <div id="telaPerfil" class="p-6 hidden tela-app"><button onclick="voltarDashboard()" class="text-ceccBlue font-bold mb-4 flex items-center hover:underline"><i class="fas fa-arrow-left mr-2"></i> Início</button><h2 class="text-2xl font-bold text-ceccBlue mb-4 border-l-4 border-ceccYellow pl-3">Meu Perfil</h2><div class="space-y-4 bg-white p-5 rounded-lg border shadow-sm"><label class="block"><span class="text-sm font-bold text-gray-600">Seu Nome</span><input type="text" id="perfilNome" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-ceccBlue"></label><label class="block"><span class="text-sm font-bold text-gray-600">Usuário de Login</span><input type="text" id="perfilLogin" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-ceccBlue"></label><label class="block"><span class="text-sm font-bold text-gray-600">E-mail</span><input type="email" id="perfilEmail" class="w-full border-2 border-gray-300 p-2 rounded mt-1 focus:border-ceccBlue"></label><button id="btnSalvarPerfil" onclick="salvarPerfil()" class="w-full bg-ceccBlue text-white font-bold py-3 rounded-lg mt-2 shadow transition hover:bg-ceccBlue-dark">Atualizar Dados</button><p id="msgPerfil" class="text-center hidden p-2"></p><hr class="my-4 border-gray-200"><button onclick="abrirModal('modalMudarSenha')" class="w-full border-2 border-gray-300 text-gray-600 font-bold py-2 rounded-lg hover:bg-gray-50 transition"><i class="fas fa-key mr-2"></i> Alterar Minha Senha</button></div></div>
+
+        <div id="modalMudarSenha" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 px-4"><div class="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl"><button onclick="fecharModal('modalMudarSenha')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button><h3 class="text-xl font-bold mb-2 text-ceccBlue"><i class="fas fa-lock mr-2"></i> Trocar Senha</h3><p class="text-sm text-gray-600 mb-4" id="txtMudarSenha">Crie uma nova senha pessoal.</p><input type="password" id="novaSenha1" placeholder="Nova Senha" class="w-full border-2 border-gray-300 p-3 rounded mb-3 focus:outline-none focus:border-ceccBlue"><input type="password" id="novaSenha2" placeholder="Repita a Senha" class="w-full border-2 border-gray-300 p-3 rounded mb-4 focus:outline-none focus:border-ceccBlue"><button id="btnMudarSenha" onclick="salvarNovaSenha()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition shadow">Atualizar</button><p id="msgMudarSenha" class="text-center font-bold mt-2 hidden text-sm"></p></div></div>
+        <div id="modalEsqueciSenha" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 px-4"><div class="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl"><button onclick="fecharModal('modalEsqueciSenha')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button><h3 class="text-xl font-bold mb-2 text-ceccBlue"><i class="fas fa-envelope mr-2"></i> Recuperar Acesso</h3><input type="email" id="emailRecuperacao" placeholder="Seu e-mail cadastrado" class="w-full border-2 border-gray-300 p-3 rounded mb-4 focus:outline-none focus:border-ceccBlue"><button id="btnRecuperar" onclick="enviarRecuperacao()" class="w-full bg-ceccYellow hover:bg-yellow-500 text-white font-bold py-3 rounded-lg transition shadow">Enviar E-mail</button><p id="msgRecuperar" class="text-center font-bold mt-2 hidden text-sm"></p></div></div>
+        <div id="modalVisitante" class="fixed inset-0 bg-ceccBlue/80 flex items-center justify-center hidden z-40 px-4"><div class="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl"><button onclick="fecharModal('modalVisitante')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button><h3 class="text-xl font-bold mb-4 text-ceccBlue"><i class="fas fa-search mr-2"></i> Buscar Visitante</h3><div class="flex space-x-2 mb-4"><input type="text" id="inputBuscaVisitante" placeholder="Nome..." class="w-full border-2 border-gray-300 p-3 rounded-l-lg focus:outline-none focus:border-ceccBlue"><button onclick="buscarVisitante()" class="bg-ceccBlue text-white px-4 rounded-r-lg font-bold"><i class="fas fa-search"></i></button></div><ul id="resultadoVisitantes" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar"></ul></div></div>
+        
+        <div id="modalAcolhimento" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 px-4">
+            <div class="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl">
+                <button onclick="fecharModal('modalAcolhimento')" class="absolute top-3 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+                <h3 class="text-xl font-bold mb-1 text-ceccYellow"><i class="fas fa-hand-holding-heart mr-2"></i> Registrar Contato</h3>
+                <p id="nomeAlunoAcolhimento" class="text-sm font-bold text-gray-700 mb-4 pb-2 border-b"></p>
+                <input type="hidden" id="idAlunoAcolhimento">
+                <input type="hidden" id="turmaAlunoAcolhimento">
+                
+                <div class="mb-3">
+                    <label class="text-xs font-bold text-gray-600">Motivo da Ausência *</label>
+                    <select id="motivoAcolhimento" class="w-full border-2 border-yellow-200 bg-white p-2 rounded focus:outline-none focus:border-ceccYellow text-sm mt-1">
+                        <option value="">-- Selecione o Motivo --</option>
+                        <option value="Viagem">Viagem</option>
+                        <option value="Doença/Saúde">Doença / Tratamento de Saúde</option>
+                        <option value="Estudos/Trabalho">Estudos / Trabalho</option>
+                        <option value="Problemas Familiares">Problemas Familiares</option>
+                        <option value="Afastamento/Sem Motivo Justo">Afastamento Espiritual (Sem motivo justo)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-xs font-bold text-gray-600">Previsão de Retorno (Opcional)</label>
+                    <p class="text-[10px] text-gray-500 italic mb-1">Se preenchido, o alerta some até a data informada.</p>
+                    <input type="date" id="dataRetornoAcolhimento" class="w-full border-2 border-yellow-200 bg-white p-2 rounded focus:outline-none focus:border-ceccYellow text-sm">
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-gray-600">Observações Extras</label>
+                    <textarea id="textoAcolhimento" class="w-full border-2 border-yellow-200 bg-yellow-50 p-2 rounded focus:outline-none focus:border-ceccYellow text-sm mt-1" rows="2" placeholder="Detalhes da conversa..."></textarea>
+                </div>
+
+                <button id="btnSalvarObsAcolhimento" onclick="salvarObservacaoAcolhimento()" class="w-full bg-ceccYellow hover:bg-yellow-500 text-white font-bold py-3 rounded-lg transition shadow">Salvar Registro</button>
+            </div>
+        </div>
+
+    </div>
+    <script src="app.js"></script>
+    <script src="acolhimento.js"></script>
+</body>
+</html>

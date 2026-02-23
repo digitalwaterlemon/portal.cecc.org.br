@@ -1,0 +1,6 @@
+/* CONFIGURAÇÕES DO TAILWIND VIA CDN (Colocado no HTML) */
+.header-bg { background-color: #ffffff; } 
+body { background-color: #f0f4f8; font-family: 'Helvetica', 'Arial', sans-serif; color: #1f2937; } 
+.custom-scrollbar::-webkit-scrollbar { width: 6px; } 
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } 
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #00548F; border-radius: 10px; }
