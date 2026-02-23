@@ -5,10 +5,35 @@ const URL_API = "https://script.google.com/macros/s/AKfycbz7G-Ua9G1mrEjPpJBVGjod
 let usuarioLogado = null; let turmaAbertaAgora = ""; let loginAtual = ""; let precisaForcarTroca = false; 
 let paisVinculadosDIJ = []; let filhosVinculadosAdulto = []; let diretorioGeral = {adultos: [], dij: []};
 
-// --- NAVEGAÇÃO BÁSICA ---
-function mostrarTela(idTela, callback = null) { document.querySelectorAll('.tela-app').forEach(t => t.classList.add('hidden')); document.getElementById(idTela).classList.remove('hidden'); window.scrollTo(0,0); if(callback) callback(); }
-function voltarDashboard() { mostrarTela('telaDashboard'); }
-function irParaHome() { if(usuarioLogado) voltarDashboard(); }
+// --- NAVEGAÇÃO INTELIGENTE (SUPORTE AO BOTÃO VOLTAR DO CELULAR) ---
+function mostrarTela(idTela, callback = null) { 
+    document.querySelectorAll('.tela-app').forEach(t => t.classList.add('hidden')); 
+    document.getElementById(idTela).classList.remove('hidden'); 
+    window.scrollTo(0,0); 
+
+    if (idTela !== 'telaLogin' && idTela !== 'telaDashboard') {
+        history.pushState({ tela: idTela }, "");
+    }
+
+    if(callback) callback();
+}
+
+window.onpopstate = function(event) {
+    if (usuarioLogado) {
+        mostrarDashboard(usuarioLogado.turmas);
+        document.querySelectorAll('.tela-app').forEach(t => t.classList.add('hidden')); 
+        document.getElementById('telaDashboard').classList.remove('hidden');
+    } else {
+        mostrarTela('telaLogin');
+    }
+};
+
+function voltarDashboard() { 
+    if (window.history.state) { window.history.back(); } 
+    else { mostrarTela('telaDashboard'); }
+}
+function irParaHome() { if(usuarioLogado) mostrarTela('telaDashboard'); }
+
 function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById('msgRecuperar').classList.add('hidden');}
 function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
 function sair() { usuarioLogado = null; loginAtual = ""; document.getElementById('infoUsuario').classList.add('hidden'); document.getElementById('inputSenha').value = ''; mostrarTela('telaLogin'); }
@@ -35,17 +60,14 @@ function checarAniversario(dataRaw, dataReferenciaCalendario) {
         if(p.length === 3) baseData = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
     }
     
-    // Força o cálculo em UTC (Tempo Universal) para matar qualquer bug de Fuso Horário ou Horário de Verão (DST)
     let bUTC = Date.UTC(baseData.getFullYear(), baseData.getMonth(), baseData.getDate());
     let nUTC = Date.UTC(baseData.getFullYear(), parseInt(md.m, 10) - 1, parseInt(md.d, 10));
     
-    // Se o aniversário deste ano já passou (matematicamente menor no tempo), joga pro ano que vem
     if (nUTC < bUTC) {
         nUTC = Date.UTC(baseData.getFullYear() + 1, parseInt(md.m, 10) - 1, parseInt(md.d, 10));
     }
     
     let diffDays = Math.round((nUTC - bUTC) / (1000 * 3600 * 24));
-    
     if (diffDays >= 0 && diffDays <= 7) return `${md.d}/${md.m}`;
     return false;
 }
@@ -86,12 +108,13 @@ async function carregarChamadaData() {
     } catch (e) { l.classList.add('hidden'); ul.innerHTML = '<p class="text-red-500 text-center">Erro ao buscar lista.</p>'; } 
 }
 
-// O BOLO COM NOME ENCURTADO E SEM A PALAVRA "DIA"
+// O BOLO COM NOME ENCURTADO E HTML EXPANDIDO PARA FÁCIL MANUTENÇÃO
 function addLinhaChamada(id, nome, tr, statusAtual = "Pendente", nascRaw = null) { 
     const ul = document.getElementById('listaAlunosChamada'); 
     let selPendente = statusAtual === 'Pendente' ? 'selected' : ''; let selPresente = statusAtual === 'Presente' ? 'selected' : ''; let selFalta = statusAtual === 'Falta' ? 'selected' : '';
     let corSel = statusAtual === 'Presente' ? 'border-green-500 bg-green-50 text-green-700' : statusAtual === 'Falta' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-300 text-gray-600';
     
+    // Encurta nome
     let nomeExibicao = nome;
     let partesNome = nome.trim().split(" ");
     if (partesNome.length > 1) {
@@ -104,7 +127,6 @@ function addLinhaChamada(id, nome, tr, statusAtual = "Pendente", nascRaw = null)
     if (nascRaw) {
         let niverProx = checarAniversario(nascRaw, dataCalendario);
         if (niverProx) {
-            // Removida a palavra "Dia" conforme solicitado!
             iconNiver = `<span class="text-[10px] bg-pink-100 text-pink-700 px-2 py-1 rounded-full shadow-sm whitespace-nowrap font-bold" title="Aniversariante!"><i class="fas fa-birthday-cake mr-1"></i>${niverProx}</span>`;
         }
     }
