@@ -5,7 +5,29 @@ const URL_API = "https://script.google.com/macros/s/AKfycbz7G-Ua9G1mrEjPpJBVGjod
 let usuarioLogado = null; let turmaAbertaAgora = ""; let loginAtual = ""; let precisaForcarTroca = false; 
 let paisVinculadosDIJ = []; let filhosVinculadosAdulto = []; let diretorioGeral = {adultos: [], dij: []};
 
-// --- NAVEGAÇÃO INTELIGENTE (SUPORTE AO BOTÃO VOLTAR DO CELULAR) ---
+// --- AUTO LOGIN (MEMÓRIA DE CACHE DO CELULAR) ---
+window.addEventListener('DOMContentLoaded', () => {
+    const cacheUser = localStorage.getItem('ceccUsuario');
+    const cacheTime = localStorage.getItem('ceccLoginTime');
+    
+    if (cacheUser && cacheTime) {
+        // Validade do login: 7 dias (7 * 24 * 60 * 60 * 1000 = 604800000 milissegundos)
+        const tempoPassado = Date.now() - parseInt(cacheTime);
+        if (tempoPassado < 604800000) {
+            usuarioLogado = JSON.parse(cacheUser);
+            loginAtual = usuarioLogado.login;
+            document.getElementById('infoUsuario').innerText = usuarioLogado.nome;
+            document.getElementById('infoUsuario').classList.remove('hidden');
+            document.getElementById('painelAdmin').classList.toggle('hidden', usuarioLogado.perfil !== "Admin");
+            montarDashboard(usuarioLogado.turmas);
+            mostrarTela('telaDashboard');
+        } else {
+            sair(); // Se passou de 7 dias, limpa a memória
+        }
+    }
+});
+
+// --- NAVEGAÇÃO INTELIGENTE (SUPORTE AO BOTÃO VOLTAR) ---
 function mostrarTela(idTela, callback = null) { 
     document.querySelectorAll('.tela-app').forEach(t => t.classList.add('hidden')); 
     document.getElementById(idTela).classList.remove('hidden'); 
@@ -36,7 +58,16 @@ function irParaHome() { if(usuarioLogado) mostrarTela('telaDashboard'); }
 
 function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById('msgRecuperar').classList.add('hidden');}
 function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
-function sair() { usuarioLogado = null; loginAtual = ""; document.getElementById('infoUsuario').classList.add('hidden'); document.getElementById('inputSenha').value = ''; mostrarTela('telaLogin'); }
+
+// --- SAIR DO SISTEMA (APAGA A MEMÓRIA) ---
+function sair() { 
+    usuarioLogado = null; loginAtual = ""; 
+    localStorage.removeItem('ceccUsuario'); 
+    localStorage.removeItem('ceccLoginTime');
+    document.getElementById('infoUsuario').classList.add('hidden'); 
+    document.getElementById('inputSenha').value = ''; 
+    mostrarTela('telaLogin'); 
+}
 
 async function chamarAPI(payload) { const r = await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) }); return await r.json(); }
 
@@ -48,7 +79,7 @@ function obterMesDia(dataRaw) { if(!dataRaw) return null; let str = String(dataR
 function hojeStr() { const tzoffset = (new Date()).getTimezoneOffset() * 60000; return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0]; }
 function formatarDataBR(dataIso) { if(!dataIso) return ""; const [y,m,d] = dataIso.split('T')[0].split('-'); return `${d}/${m}/${y}`; }
 
-// MÁGICA DE CHECAGEM DE ANIVERSÁRIO - BLINDADA CONTRA FUSO HORÁRIO E DST
+// MÁGICA DE CHECAGEM DE ANIVERSÁRIO
 function checarAniversario(dataRaw, dataReferenciaCalendario) {
     if (!dataRaw) return false;
     let md = obterMesDia(dataRaw);
@@ -63,9 +94,7 @@ function checarAniversario(dataRaw, dataReferenciaCalendario) {
     let bUTC = Date.UTC(baseData.getFullYear(), baseData.getMonth(), baseData.getDate());
     let nUTC = Date.UTC(baseData.getFullYear(), parseInt(md.m, 10) - 1, parseInt(md.d, 10));
     
-    if (nUTC < bUTC) {
-        nUTC = Date.UTC(baseData.getFullYear() + 1, parseInt(md.m, 10) - 1, parseInt(md.d, 10));
-    }
+    if (nUTC < bUTC) { nUTC = Date.UTC(baseData.getFullYear() + 1, parseInt(md.m, 10) - 1, parseInt(md.d, 10)); }
     
     let diffDays = Math.round((nUTC - bUTC) / (1000 * 3600 * 24));
     if (diffDays >= 0 && diffDays <= 7) return `${md.d}/${md.m}`;
@@ -77,13 +106,31 @@ async function carregarCheckboxesTurmas(containerId, isCoordenador, turmasSeleci
     try { const turmas = await chamarAPI({ acao: "buscarTurmas" }); c.innerHTML = ''; const selArray = String(turmasSelecionadas || "").split(',').map(t=>t.trim()); turmas.forEach(t => { let isChecked = selArray.includes(t.trim()) ? 'checked' : ''; c.innerHTML += `<label class="flex items-center space-x-2 p-2 border-b hover:bg-gray-50 cursor-pointer"><input type="checkbox" value="${t}" class="chk-${containerId}" ${isChecked}><span class="text-sm text-gray-700">${t}</span></label>`; }); } catch(e) { c.innerHTML = '<p class="text-red-500 py-2">Erro ao carregar turmas.</p>'; }
 }
 
-// --- LOGIN E RECUPERAR SENHA ---
-async function fazerLogin() { const l = document.getElementById('inputLogin').value; const s = document.getElementById('inputSenha').value; const btn = document.getElementById('btnLogin'); const msg = document.getElementById('msgLogin'); if(!l || !s) return; loginAtual = l; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...'; btn.disabled = true; msg.classList.add('hidden'); try { const res = await chamarAPI({ acao: "login", login: l, senha: s }); if(res.erro) throw new Error(res.erro); usuarioLogado = res; if(res.precisaTrocarSenha) { precisaForcarTroca = true; document.getElementById('msgMudarSenha').classList.add('hidden'); abrirModal('modalMudarSenha'); return; } document.getElementById('infoUsuario').innerText = res.nome; document.getElementById('infoUsuario').classList.remove('hidden'); document.getElementById('painelAdmin').classList.toggle('hidden', res.perfil !== "Admin"); montarDashboard(res.turmas); mostrarTela('telaDashboard'); } catch (e) { msg.innerText = e.message; msg.classList.remove('hidden'); } finally { btn.innerHTML = 'Entrar <i class="fas fa-sign-in-alt ml-2"></i>'; btn.disabled = false; } }
+// --- LOGIN COM GRAVAÇÃO NA MEMÓRIA ---
+async function fazerLogin() { 
+    const l = document.getElementById('inputLogin').value; const s = document.getElementById('inputSenha').value; const btn = document.getElementById('btnLogin'); const msg = document.getElementById('msgLogin'); 
+    if(!l || !s) return; loginAtual = l; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...'; btn.disabled = true; msg.classList.add('hidden'); 
+    try { 
+        const res = await chamarAPI({ acao: "login", login: l, senha: s }); 
+        if(res.erro) throw new Error(res.erro); 
+        usuarioLogado = res; 
+        if(res.precisaTrocarSenha) { precisaForcarTroca = true; document.getElementById('msgMudarSenha').classList.add('hidden'); abrirModal('modalMudarSenha'); return; } 
+        
+        // SALVA OS DADOS NO NAVEGADOR
+        localStorage.setItem('ceccUsuario', JSON.stringify(usuarioLogado));
+        localStorage.setItem('ceccLoginTime', Date.now());
+
+        document.getElementById('infoUsuario').innerText = res.nome; document.getElementById('infoUsuario').classList.remove('hidden'); document.getElementById('painelAdmin').classList.toggle('hidden', res.perfil !== "Admin"); montarDashboard(res.turmas); mostrarTela('telaDashboard'); 
+    } catch (e) { msg.innerText = e.message; msg.classList.remove('hidden'); } finally { btn.innerHTML = 'Entrar <i class="fas fa-sign-in-alt ml-2"></i>'; btn.disabled = false; } 
+}
+
 async function enviarRecuperacao() { const e = document.getElementById('emailRecuperacao').value; const btn = document.getElementById('btnRecuperar'); const msg = document.getElementById('msgRecuperar'); if(!e) return; btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...'; msg.classList.add('hidden'); try { const res = await chamarAPI({ acao: "recuperarSenha", email: e }); if(res.erro) throw new Error(res.erro); msg.innerText = res.mensagem; msg.className = "text-center font-bold block mt-3 p-2 bg-green-100 text-green-700 rounded"; msg.classList.remove('hidden'); setTimeout(() => fecharModal('modalEsqueciSenha'), 3000); } catch (er) { msg.innerText = er.message; msg.className = "text-center font-bold block mt-3 p-2 bg-red-100 text-red-700 rounded text-sm"; msg.classList.remove('hidden'); } finally { btn.disabled = false; btn.innerHTML = 'Enviar E-mail'; } }
 async function salvarNovaSenha() { const s1 = document.getElementById('novaSenha1').value; const s2 = document.getElementById('novaSenha2').value; const btn = document.getElementById('btnMudarSenha'); const msg = document.getElementById('msgMudarSenha'); if(s1.length < 4 || s1 !== s2) { msg.innerText = "Senha inválida ou não confere."; msg.className="text-center font-bold mt-3 p-2 bg-red-100 text-red-700 rounded block"; msg.classList.remove('hidden'); return; } btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...'; msg.classList.add('hidden'); try { const res = await chamarAPI({ acao: "mudarSenha", login: loginAtual, novaSenha: s1 }); if(res.erro) throw new Error(res.erro); msg.innerText = "Senha atualizada com sucesso!"; msg.className = "text-center font-bold mt-3 p-2 bg-green-100 text-green-700 rounded block"; msg.classList.remove('hidden'); setTimeout(() => { fecharModal('modalMudarSenha'); document.getElementById('inputSenha').value = s1; document.getElementById('novaSenha1').value = ''; document.getElementById('novaSenha2').value = ''; precisaForcarTroca = false; fazerLogin(); }, 1500); } catch (e) { msg.innerText = e.message; msg.className = "text-center font-bold mt-3 p-2 bg-red-100 text-red-700 rounded block"; msg.classList.remove('hidden'); } finally { btn.disabled = false; btn.innerHTML = 'Atualizar'; } }
 
 function abrirPerfil() { document.getElementById('perfilNome').value = usuarioLogado.nome; document.getElementById('perfilLogin').value = usuarioLogado.login; document.getElementById('perfilEmail').value = usuarioLogado.email; document.getElementById('msgPerfil').classList.add('hidden'); }
-async function salvarPerfil() { const d = { loginAtual: loginAtual, novoLogin: document.getElementById('perfilLogin').value, nome: document.getElementById('perfilNome').value, email: document.getElementById('perfilEmail').value }; if(!d.novoLogin || !d.nome || !isEmailValido(d.email)) return; document.getElementById('btnSalvarPerfil').disabled=true; try { const res = await chamarAPI({ acao: "atualizarPerfil", dados: d }); loginAtual = res.novoLogin; usuarioLogado.login = res.novoLogin; usuarioLogado.nome = res.novoNome; usuarioLogado.email = d.email; document.getElementById('infoUsuario').innerText = res.novoNome; alert("Perfil Atualizado!"); } catch(e){ alert(e.message); } finally { document.getElementById('btnSalvarPerfil').disabled=false; } }
+
+// Atualiza a memória se o usuário mudar de nome/login no perfil
+async function salvarPerfil() { const d = { loginAtual: loginAtual, novoLogin: document.getElementById('perfilLogin').value, nome: document.getElementById('perfilNome').value, email: document.getElementById('perfilEmail').value }; if(!d.novoLogin || !d.nome || !isEmailValido(d.email)) return; document.getElementById('btnSalvarPerfil').disabled=true; try { const res = await chamarAPI({ acao: "atualizarPerfil", dados: d }); loginAtual = res.novoLogin; usuarioLogado.login = res.novoLogin; usuarioLogado.nome = res.novoNome; usuarioLogado.email = d.email; localStorage.setItem('ceccUsuario', JSON.stringify(usuarioLogado)); document.getElementById('infoUsuario').innerText = res.novoNome; alert("Perfil Atualizado!"); } catch(e){ alert(e.message); } finally { document.getElementById('btnSalvarPerfil').disabled=false; } }
 
 // --- DASHBOARD E CHAMADA ---
 async function montarDashboard(strTurmas) {
@@ -108,32 +155,24 @@ async function carregarChamadaData() {
     } catch (e) { l.classList.add('hidden'); ul.innerHTML = '<p class="text-red-500 text-center">Erro ao buscar lista.</p>'; } 
 }
 
-// O BOLO COM NOME ENCURTADO E HTML EXPANDIDO PARA FÁCIL MANUTENÇÃO
 function addLinhaChamada(id, nome, tr, statusAtual = "Pendente", nascRaw = null) { 
     const ul = document.getElementById('listaAlunosChamada'); 
     let selPendente = statusAtual === 'Pendente' ? 'selected' : ''; let selPresente = statusAtual === 'Presente' ? 'selected' : ''; let selFalta = statusAtual === 'Falta' ? 'selected' : '';
     let corSel = statusAtual === 'Presente' ? 'border-green-500 bg-green-50 text-green-700' : statusAtual === 'Falta' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-300 text-gray-600';
     
-    // Encurta nome
     let nomeExibicao = nome;
     let partesNome = nome.trim().split(" ");
-    if (partesNome.length > 1) {
-        nomeExibicao = partesNome[0] + " " + partesNome[partesNome.length - 1];
-    }
+    if (partesNome.length > 1) { nomeExibicao = partesNome[0] + " " + partesNome[partesNome.length - 1]; }
 
     let dataCalendario = document.getElementById('dataChamada').value;
-
     let iconNiver = "";
     if (nascRaw) {
         let niverProx = checarAniversario(nascRaw, dataCalendario);
-        if (niverProx) {
-            iconNiver = `<span class="text-[10px] bg-pink-100 text-pink-700 px-2 py-1 rounded-full shadow-sm whitespace-nowrap font-bold" title="Aniversariante!"><i class="fas fa-birthday-cake mr-1"></i>${niverProx}</span>`;
-        }
+        if (niverProx) { iconNiver = `<span class="text-[10px] bg-pink-100 text-pink-700 px-2 py-1 rounded-full shadow-sm whitespace-nowrap font-bold" title="Aniversariante!"><i class="fas fa-birthday-cake mr-1"></i>${niverProx}</span>`; }
     }
 
     ul.innerHTML += `
     <li class="flex justify-between items-center bg-white p-3 sm:p-4 rounded-lg shadow-sm border ${tr==='Visitante'?'border-ceccYellow':'border-gray-200'} gap-3"> 
-        
         <div class="flex-1 flex items-center flex-wrap gap-2">
             <p class="font-bold text-gray-800 leading-tight">${nomeExibicao} ${tr==='Visitante'?'<span class="text-xs bg-ceccYellow text-white px-2 py-1 rounded-full shadow-sm">Visita</span>':''}</p>
             ${iconNiver}
@@ -141,13 +180,11 @@ function addLinhaChamada(id, nome, tr, statusAtual = "Pendente", nascRaw = null)
                 <i class="fas fa-exclamation-triangle text-xl"></i>
             </span>
         </div> 
-        
         <div class="flex-shrink-0">
             <select class="status-chamada border-2 rounded-lg p-2 font-bold cursor-pointer text-sm focus:outline-none ${corSel}" data-id="${id}" data-nome="${nome}" data-tipo="${tr}" onchange="mudarCorSel(this)"> 
                 <option value="Pendente" ${selPendente}>❓ Pendente</option> <option value="Presente" class="text-green-600" ${selPresente}>🟢 Presente</option> <option value="Falta" class="text-red-600" ${selFalta}>🔴 Falta</option> 
             </select>
         </div>
-        
     </li>`; 
 }
 
